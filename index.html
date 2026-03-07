@@ -1,0 +1,1276 @@
+import { useState, useEffect, useRef } from "react";
+
+// ═══════════════════════════════════
+// GOOGLE FONTS
+// ═══════════════════════════════════
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080B11;
+      --bg2: #0D1117;
+      --bg3: #131920;
+      --surface: #161D27;
+      --surface2: #1C2530;
+      --border: #1E2D3D;
+      --border2: #243447;
+      --accent: #00D4FF;
+      --accent2: #0099BB;
+      --accent-glow: rgba(0,212,255,0.15);
+      --green: #00FF88;
+      --green-dim: rgba(0,255,136,0.1);
+      --amber: #FFB800;
+      --red: #FF4560;
+      --text: #E8F4F8;
+      --text2: #8BA5BB;
+      --text3: #4A6275;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; letter-spacing: -0.1px; min-height: 100vh; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px var(--accent-glow); } 50% { box-shadow: 0 0 40px rgba(0,212,255,0.3); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+    @keyframes float { 0%,100% { transform:translateY(0px); } 50% { transform:translateY(-8px); } }
+    @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+    @keyframes grid-move { from { background-position: 0 0; } to { background-position: 40px 40px; } }
+    @keyframes typewriter { from { width: 0; } to { width: 100%; } }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes countUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+    .fade-up-d1 { animation: fadeUp 0.5s 0.1s ease both; }
+    .fade-up-d2 { animation: fadeUp 0.5s 0.2s ease both; }
+    .fade-up-d3 { animation: fadeUp 0.5s 0.3s ease both; }
+    .fade-up-d4 { animation: fadeUp 0.5s 0.4s ease both; }
+    .fade-up-d5 { animation: fadeUp 0.5s 0.5s ease both; }
+
+    .glow-btn { animation: pulse-glow 2.5s ease-in-out infinite; }
+    .float-el { animation: float 4s ease-in-out infinite; }
+    .spin-el { animation: spin 1s linear infinite; }
+
+    .shimmer-text {
+      background: linear-gradient(90deg, var(--text2) 0%, var(--accent) 40%, var(--green) 60%, var(--text2) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: grid-move 8s linear infinite;
+    }
+
+    .glass {
+      background: rgba(22,29,39,0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+    }
+
+    .glass-hover:hover {
+      background: rgba(28,37,48,0.9);
+      border-color: var(--border2);
+      transition: all 0.2s ease;
+    }
+
+    .cursor-blink { animation: blink 1s step-end infinite; }
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+
+    /* Tag styles */
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 10px; border-radius: 100px;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    }
+    .tag-cyan { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+    .tag-green { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.25); }
+    .tag-amber { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.25); }
+    .tag-red { background: rgba(255,69,96,0.1); color: var(--red); border: 1px solid rgba(255,69,96,0.25); }
+
+    /* Neon line */
+    .neon-line { height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+
+    /* Code output area */
+    .code-area {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #A8D8EA;
+      background: #060A0F;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      position: relative;
+    }
+    .code-area .kw { color: var(--accent); }
+    .code-area .val { color: var(--green); }
+    .code-area .cm { color: #4A6275; }
+    .code-area .sec { color: var(--amber); }
+
+    select, input, textarea {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-body);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+    }
+    select option { background: var(--bg2); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00D4FF, #0088BB);
+      color: #000;
+      font-family: var(--font-display);
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,212,255,0.35); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text2);
+      font-family: var(--font-body);
+      font-weight: 500;
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+
+    .input-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+  `}</style>
+);
+
+// ═══════════════════════════════════
+// ICONS (SVG inline)
+// ═══════════════════════════════════
+const Icon = ({ name, size = 16, color = "currentColor" }) => {
+  const icons = {
+    zap: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    copy: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+    check: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    refresh: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+    stars: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    code: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+    layers: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>,
+    eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    bolt: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>,
+    globe: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+    menu: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+    x: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    arrow: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+    sparkle: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5Z"/></svg>,
+    info: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  };
+  return icons[name] || null;
+};
+
+// ═══════════════════════════════════
+// PROMPT GENERATOR ENGINE
+// ═══════════════════════════════════
+const generatePrompt = (params) => {
+  const {
+    productName, tagline, niche, targetUser, valueProp,
+    designDir, colorPref, themeMode, specialPages,
+    specialReqs, techLevel
+  } = params;
+
+  const designMap = {
+    "modern-minimal": "Modern Minimal (clean, whitespace-heavy, ultra-refined)",
+    "bold-energetic": "Bold & Energetic (vibrant colors, strong typography, kinetic feel)",
+    "corporate": "Corporate Professional (trust-inspiring, structured, subtle gradients)",
+    "dark-sleek": "Dark & Sleek (dark-first UI, neon accents, depth through shadows)",
+    "warm-friendly": "Warm & Friendly (rounded corners, pastel tones, approachable feel)",
+    "luxury": "Luxurious Premium (refined, high-end palette, editorial typography)",
+  };
+
+  const techMap = {
+    "beginner": "React + Tailwind (single file JSX, no external state manager)",
+    "intermediate": "React + Tailwind + Recharts + Zustand (modular components, custom hooks)",
+    "advanced": "Next.js 14 App Router + Tailwind + shadcn/ui + Recharts + React Query (full architecture)",
+  };
+
+  const prompt = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MASTER PROMPT — SAAS WEB APP GENERATOR
+  Generated by PromptForge ⚡
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Kamu adalah senior full-stack developer dan UI/UX specialist kelas dunia.
+Buatkan saya aplikasi web SaaS yang production-ready dengan spesifikasi:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 IDENTITAS PRODUK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nama Produk      : ${productName || "[ISI NAMA PRODUK]"}
+Tagline          : ${tagline || "[ISI TAGLINE — maks 10 kata]"}
+Niche / Industri : ${niche || "[ISI NICHE]"}
+Target User      : ${targetUser || "[ISI TARGET USER]"}
+Core Value Prop  : ${valueProp || "[ISI VALUE PROPOSITION]"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏗️ HALAMAN WAJIB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 🌐 LANDING PAGE (Public)
+   • Hero section: headline powerful + animated CTA button
+   • Feature highlights: 6 fitur utama dengan icon dan deskripsi singkat
+   • How it works: 3 langkah mudah dengan visual flow
+   • Testimonial section: 6 review dengan avatar + rating stars
+   • Pricing: 3 tier (Free / Pro $29/mo / Enterprise — custom)
+   • FAQ accordion: 8 pertanyaan umum
+   • Footer: logo, nav links, socials, newsletter signup
+
+2. 🔐 AUTH PAGES
+   • Login: email + password, Google OAuth button, "remember me"
+   • Register: nama lengkap, email, password, confirm, terms checkbox
+   • Forgot Password: email input + success state
+
+3. 📊 DASHBOARD UTAMA
+   • Sidebar: collapsible (240px → 64px), user avatar + name, nav items dengan icon
+   • Header: breadcrumb, search bar, notification bell (badge), user menu
+   • Overview KPIs: 4 metric cards (dengan % perubahan & trend arrow)
+   • Charts: line chart (12 bulan) + bar chart (weekly) menggunakan Recharts
+   • Recent activity feed: 10 item terbaru dengan timestamp
+   • Quick action panel: 4 shortcut buttons
+
+4. ⚙️ SETTINGS PAGE
+   • Profile: avatar upload, nama, email, bio, timezone
+   • Notifikasi: toggle switches per kategori
+   • Billing: plan saat ini, usage meter, upgrade/downgrade CTA
+   • Security: ganti password, toggle 2FA, active sessions list
+   • Danger Zone: delete account dengan konfirmasi input
+
+5. 📋 HALAMAN FITUR KHUSUS
+${specialPages ? `   • ${specialPages.split('\n').join('\n   • ')}` : `   • [DESKRIPSIKAN HALAMAN KHUSUS UNTUK NICHE "${niche || "KAMU"}"]
+   • Contoh: tabel data utama, form input, kanban board, kalender, dsb.`}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 DESIGN SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Design Direction : ${designMap[designDir] || designDir}
+Color Palette    : ${colorPref || "Pilih yang paling sesuai dengan karakter produk"}
+Theme Mode       : ${themeMode === "both" ? "Light + Dark (dengan toggle di header)" : themeMode === "dark" ? "Dark Mode Only" : "Light Mode Only"}
+Typography       : Hindari font generik (Inter/Roboto/Arial). Pilih font berkarakter
+                   yang cocok dengan mood produk — paduankan display font + body font
+Icons            : Lucide React (wajib)
+Animations       : CSS transitions + micro-interactions pada hover/focus state
+
+VISUAL REQUIREMENTS:
+✦ Tidak boleh terlihat seperti template generik
+✦ Setiap section harus punya visual "wow moment"
+✦ Konsistensi spacing menggunakan 4px grid system
+✦ Loading skeleton screens pada setiap data-fetch area
+✦ Smooth transition antar halaman (min. 200ms ease)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛠️ TECH STACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stack Level      : ${techMap[techLevel] || techMap["beginner"]}
+Data             : Mock/dummy data yang realistis (jangan lorem ipsum)
+State            : React useState + useContext (atau Zustand jika advanced)
+Routing          : State-based routing (tanpa react-router untuk single file)
+Charts           : Recharts
+Forms            : Controlled components dengan validasi inline
+
+KOMPONEN WAJIB ADA:
+✅ Button (primary, secondary, outline, ghost, destructive)
+✅ Input (default, with-icon, with-error, with-label)
+✅ Card (dengan shadow hierarchy)
+✅ Badge / Status tag
+✅ Avatar (dengan fallback initials)
+✅ Dropdown menu (accessible)
+✅ Table (sortable, with pagination)
+✅ Modal / Dialog
+✅ Toast notification (success, error, warning)
+✅ Tabs (horizontal + vertical)
+✅ Empty state dengan ilustrasi/icon
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 RESPONSIVE REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Mobile (< 768px):
+• Sidebar → hamburger drawer dengan overlay
+• Grid layouts → single column
+• Tables → horizontal scroll
+• Touch targets minimum 44x44px
+
+Tablet (768px–1024px):
+• Sidebar collapsible (icon only mode)
+• 2-column grids
+
+Desktop (> 1024px):
+• Full sidebar expanded
+• Multi-column layouts
+• Advanced data visualizations
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 DUMMY DATA REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Buat data mock yang REALISTIS untuk niche "${niche || "produk kamu"}":
+• Minimal 8 records utama (user/item/transaction/dsb.)
+• Chart data: 12 bulan terakhir dengan variasi natural (bukan flat)
+• Activity feed: 10 entri dengan timestamp relatif (2 jam lalu, dst.)
+• Notifikasi: 5 notif (3 unread, 2 read), mixed types
+• Testimonial: 6 review lengkap dengan nama, jabatan, perusahaan, rating
+• KPI metrics: 4 angka dengan % perubahan (mix positif & negatif)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ SPECIAL REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${specialReqs || "Tidak ada requirement tambahan"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 HARD CONSTRAINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• JANGAN gunakan library selain yang disebutkan di tech stack
+• JANGAN gunakan lorem ipsum — semua konten harus kontekstual
+• JANGAN buat design yang cookie-cutter / terlihat seperti template
+• JANGAN skip komponen wajib di atas
+• JANGAN gunakan font Arial, Inter, Roboto, atau system-ui
+• SEMUA dalam satu file JSX (kecuali stack advanced)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📤 OUTPUT FORMAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Satu file React JSX yang langsung runnable
+2. Semua import di atas, export default di bawah
+3. Comment section pada setiap komponen utama
+4. Tidak ada placeholder comment ("// TODO", "// add here")
+5. Kode production-quality — bukan prototype
+
+Mulai dari Landing Page + Dashboard. Pastikan routing antar halaman berfungsi.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⚡ Generated by PromptForge — promptforge.app
+  Copy prompt ini dan paste ke Claude / GPT / v0 / Bolt
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  `.trim();
+
+  return prompt;
+};
+
+// ═══════════════════════════════════
+// STATS COUNTER
+// ═══════════════════════════════════
+const stats = [
+  { label: "Prompt Generated", value: "12,847", suffix: "+" },
+  { label: "SaaS Niches", value: "50", suffix: "+" },
+  { label: "Dev Hours Saved", value: "98", suffix: "%" },
+  { label: "Avg. Rating", value: "4.9", suffix: "★" },
+];
+
+// ═══════════════════════════════════
+// NICHE PRESETS
+// ═══════════════════════════════════
+const nichePresets = [
+  {
+    icon: "👥", label: "HR Tech", niche: "HR Tech / Human Resource Management",
+    target: "HR Manager, Startup Founder, Team Lead",
+    value: "Mempercepat rekrutmen dan manajemen karyawan dalam satu platform",
+    pages: "Applicant Tracking System (ATS)\nEmployee Directory + Profile\nLeave Request & Approval\nPayroll Summary",
+    tagline: "Rekrut lebih cepat, kelola tim lebih mudah"
+  },
+  {
+    icon: "📚", label: "EdTech", niche: "EdTech / Online Learning Platform",
+    target: "Instruktur online, Lembaga kursus, Corporate trainer",
+    value: "Platform all-in-one untuk membuat dan menjual kursus online",
+    pages: "Course Builder dengan drag-and-drop\nStudent Progress Dashboard\nQuiz & Assessment Builder\nCertificate Generator",
+    tagline: "Belajar lebih cerdas, bukan lebih keras"
+  },
+  {
+    icon: "💰", label: "FinTech", niche: "FinTech / Accounting & Bookkeeping",
+    target: "UMKM, Freelancer, Akuntan",
+    value: "Otomatisasi pembukuan dan laporan keuangan dengan AI",
+    pages: "Transaction Log & Categorization\nInvoice Generator & Tracker\nFinancial Reports (P&L, Balance Sheet)\nBudget Planner",
+    tagline: "Keuangan bisnis kamu, otomatis dan akurat"
+  },
+  {
+    icon: "📣", label: "MarTech", niche: "Marketing Tech / Campaign Management",
+    target: "Digital marketer, Agency owner, Brand manager",
+    value: "Kelola semua channel marketing dari satu dashboard",
+    pages: "Campaign Builder & Scheduler\nA/B Test Manager\nAudience Segmentation\nROI Analytics Dashboard",
+    tagline: "Satu dashboard untuk semua kampanye digital"
+  },
+  {
+    icon: "⚖️", label: "LegalTech", niche: "LegalTech / Legal Practice Management",
+    target: "Pengacara, Kantor hukum, Legal officer perusahaan",
+    value: "Digitalkan operasional hukum dari klien hingga dokumen",
+    pages: "Client Matter Management\nDocument Vault & e-Signing\nBilling & Time Tracking\nCase Timeline View",
+    tagline: "Praktik hukum modern, semua dalam satu platform"
+  },
+  {
+    icon: "🏥", label: "HealthTech", niche: "HealthTech / Clinic Management",
+    target: "Dokter, Klinik, Rumah sakit kecil",
+    value: "Digitalisasi manajemen klinik dari janji temu hingga rekam medis",
+    pages: "Appointment Booking & Calendar\nPatient Medical Records (EMR)\nPrescription Builder\nBilling & Insurance Claims",
+    tagline: "Klinik modern, pelayanan pasien optimal"
+  },
+];
+
+// ═══════════════════════════════════
+// LANDING PAGE COMPONENT
+// ═══════════════════════════════════
+const LandingPage = ({ onNavigate }) => {
+  const [activeNiche, setActiveNiche] = useState(null);
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      {/* HERO */}
+      <section style={{
+        position: "relative", minHeight: "100vh", display: "flex",
+        alignItems: "center", justifyContent: "center",
+        overflow: "hidden", padding: "120px 24px 80px"
+      }}>
+        {/* Grid bg */}
+        <div className="grid-bg" style={{
+          position: "absolute", inset: 0, opacity: 0.6
+        }} />
+        {/* Gradient orbs */}
+        <div style={{
+          position: "absolute", top: "20%", left: "10%", width: 400, height: 400,
+          background: "radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%)",
+          borderRadius: "50%", filter: "blur(40px)"
+        }} />
+        <div style={{
+          position: "absolute", bottom: "20%", right: "10%", width: 350, height: 350,
+          background: "radial-gradient(circle, rgba(0,255,136,0.06) 0%, transparent 70%)",
+          borderRadius: "50%", filter: "blur(40px)"
+        }} />
+
+        <div style={{ maxWidth: 820, textAlign: "center", position: "relative", zIndex: 1 }}>
+          {/* Badge */}
+          <div className="fade-up" style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
+            <span className="tag tag-cyan" style={{ padding: "6px 16px", fontSize: 12 }}>
+              <Icon name="sparkle" size={10} color="#00D4FF" />
+              &nbsp;AI-POWERED SAAS PROMPT GENERATOR
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="fade-up-d1" style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(42px, 7vw, 84px)",
+            fontWeight: 800,
+            lineHeight: 1.05,
+            letterSpacing: "-2px",
+            marginBottom: 24,
+          }}>
+            Generate{" "}
+            <span className="shimmer-text">Perfect Prompt</span>
+            <br />untuk SaaS-mu
+          </h1>
+
+          <p className="fade-up-d2" style={{
+            fontSize: "clamp(16px, 2.5vw, 20px)",
+            color: "var(--text2)",
+            lineHeight: 1.7,
+            maxWidth: 560,
+            margin: "0 auto 40px",
+            fontWeight: 300
+          }}>
+            Isi parameter produkmu, PromptForge generate prompt master yang siap dipakai
+            di Claude, GPT, v0, Bolt — dalam hitungan detik.
+          </p>
+
+          {/* CTAs */}
+          <div className="fade-up-d3" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              className="btn-primary glow-btn"
+              style={{ padding: "14px 32px", fontSize: 16 }}
+              onClick={() => onNavigate("generator")}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="zap" size={18} color="#000" />
+                Generate Prompt Sekarang
+              </span>
+            </button>
+            <button
+              className="btn-secondary"
+              style={{ padding: "14px 28px", fontSize: 15 }}
+              onClick={() => onNavigate("dashboard")}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="eye" size={16} />
+                Lihat Dashboard
+              </span>
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="fade-up-d4" style={{
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 1, marginTop: 64, maxWidth: 680, margin: "64px auto 0",
+            background: "var(--border)", borderRadius: 16, overflow: "hidden"
+          }}>
+            {stats.map((s, i) => (
+              <div key={i} style={{
+                background: "var(--surface)",
+                padding: "20px 16px", textAlign: "center"
+              }}>
+                <div style={{
+                  fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 800,
+                  color: "var(--accent)"
+                }}>
+                  {s.value}<span style={{ color: "var(--green)", fontSize: 18 }}>{s.suffix}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text3)", marginTop: 4, fontFamily: "var(--font-mono)" }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* NICHE PRESETS */}
+      <section style={{ padding: "80px 24px", maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <span className="tag tag-green" style={{ marginBottom: 16, display: "inline-flex" }}>
+            50+ NICHE TERSEDIA
+          </span>
+          <h2 style={{
+            fontFamily: "var(--font-display)", fontSize: "clamp(28px, 5vw, 48px)",
+            fontWeight: 700, letterSpacing: "-1px"
+          }}>
+            Pilih Niche, Langsung Generate
+          </h2>
+          <p style={{ color: "var(--text2)", marginTop: 12, fontSize: 16 }}>
+            Preset siap pakai untuk niche SaaS paling populer
+          </p>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: 16
+        }}>
+          {nichePresets.map((preset, i) => (
+            <div
+              key={i}
+              className="glass glass-hover"
+              style={{
+                padding: 24, borderRadius: 16, cursor: "pointer",
+                transition: "all 0.2s ease",
+                border: activeNiche === i ? "1px solid var(--accent)" : "1px solid var(--border)",
+                boxShadow: activeNiche === i ? "0 0 0 1px var(--accent), 0 8px 32px rgba(0,212,255,0.1)" : "none"
+              }}
+              onClick={() => {
+                setActiveNiche(i);
+                onNavigate("generator", preset);
+              }}
+            >
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{preset.icon}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18
+                }}>{preset.label}</span>
+                <span className="tag tag-cyan" style={{ fontSize: 10 }}>PRESET</span>
+              </div>
+              <p style={{ color: "var(--text2)", fontSize: 13, lineHeight: 1.6 }}>
+                {preset.value}
+              </p>
+              <div style={{
+                marginTop: 16, display: "flex", alignItems: "center",
+                gap: 6, color: "var(--accent)", fontSize: 13, fontWeight: 500
+              }}>
+                Gunakan preset ini <Icon name="arrow" size={14} color="var(--accent)" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section style={{
+        padding: "80px 24px",
+        background: "linear-gradient(180deg, transparent, var(--bg2), transparent)"
+      }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{
+            fontFamily: "var(--font-display)", fontSize: "clamp(28px, 5vw, 44px)",
+            fontWeight: 700, letterSpacing: "-1px", marginBottom: 12
+          }}>
+            3 Langkah, Prompt Siap
+          </h2>
+          <p style={{ color: "var(--text2)", fontSize: 16, marginBottom: 56 }}>
+            Dari parameter ke prompt master dalam waktu kurang dari 2 menit
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+            {[
+              { step: "01", icon: "layers", title: "Isi Parameter", desc: "Input nama produk, niche, target user, dan kebutuhan khusus kamu" },
+              { step: "02", icon: "zap", title: "Generate Prompt", desc: "PromptForge otomatis generate prompt master yang komprehensif" },
+              { step: "03", icon: "code", title: "Paste & Build", desc: "Copy prompt, paste ke Claude/GPT/v0, dan dapatkan web SaaS-mu" },
+            ].map((item, i) => (
+              <div key={i} style={{
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: 16, padding: "32px 24px", position: "relative", overflow: "hidden"
+              }}>
+                <div style={{
+                  position: "absolute", top: 16, right: 20,
+                  fontFamily: "var(--font-mono)", fontSize: 48, fontWeight: 800,
+                  color: "var(--border2)", lineHeight: 1
+                }}>{item.step}</div>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  background: "var(--accent-glow)", border: "1px solid rgba(0,212,255,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 20
+                }}>
+                  <Icon name={item.icon} size={22} color="var(--accent)" />
+                </div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 20, marginBottom: 10 }}>
+                  {item.title}
+                </h3>
+                <p style={{ color: "var(--text2)", fontSize: 14, lineHeight: 1.7 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA BANNER */}
+      <section style={{ padding: "80px 24px" }}>
+        <div style={{
+          maxWidth: 800, margin: "0 auto", textAlign: "center",
+          background: "linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%)",
+          border: "1px solid var(--border2)", borderRadius: 24,
+          padding: "56px 40px", position: "relative", overflow: "hidden"
+        }}>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 60%)"
+          }} />
+          <div className="neon-line" style={{ position: "absolute", top: 0, left: "10%", right: "10%" }} />
+          <h2 style={{
+            fontFamily: "var(--font-display)", fontSize: "clamp(26px, 5vw, 42px)",
+            fontWeight: 800, letterSpacing: "-1px", marginBottom: 16, position: "relative"
+          }}>
+            Siap build SaaS impianmu?
+          </h2>
+          <p style={{ color: "var(--text2)", fontSize: 16, marginBottom: 32, position: "relative" }}>
+            Generate prompt pertamamu gratis — tidak perlu daftar.
+          </p>
+          <button
+            className="btn-primary glow-btn"
+            style={{ padding: "16px 40px", fontSize: 17, position: "relative" }}
+            onClick={() => onNavigate("generator")}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Icon name="bolt" size={18} color="#000" />
+              Mulai Generate Gratis
+            </span>
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════
+// GENERATOR PAGE COMPONENT
+// ═══════════════════════════════════
+const GeneratorPage = ({ presetData }) => {
+  const [params, setParams] = useState({
+    productName: presetData?.label ? `My${presetData.label}App` : "",
+    tagline: presetData?.tagline || "",
+    niche: presetData?.niche || "",
+    targetUser: presetData?.target || "",
+    valueProp: presetData?.value || "",
+    designDir: "dark-sleek",
+    colorPref: "",
+    themeMode: "dark",
+    specialPages: presetData?.pages || "",
+    specialReqs: "",
+    techLevel: "beginner",
+  });
+
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [charCount, setCharCount] = useState(0);
+
+  const update = (key, val) => setParams(p => ({ ...p, [key]: val }));
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    setGeneratedPrompt("");
+    const prompt = generatePrompt(params);
+    let i = 0;
+    const interval = setInterval(() => {
+      i += Math.floor(Math.random() * 18) + 8;
+      if (i >= prompt.length) {
+        setGeneratedPrompt(prompt);
+        setCharCount(prompt.length);
+        setIsGenerating(false);
+        clearInterval(interval);
+      } else {
+        setGeneratedPrompt(prompt.slice(0, i));
+        setCharCount(i);
+      }
+    }, 16);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(generatedPrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const inputStyle = { padding: "10px 14px", fontSize: 14, borderRadius: 8 };
+  const selectStyle = { padding: "10px 14px", fontSize: 14, borderRadius: 8 };
+
+  const fieldGroup = (label, children) => (
+    <div style={{ marginBottom: 20 }}>
+      <label className="input-label">{label}</label>
+      {children}
+    </div>
+  );
+
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+          <span className="tag tag-cyan">GENERATOR</span>
+          {presetData && <span className="tag tag-green">PRESET: {presetData.label?.toUpperCase()}</span>}
+        </div>
+        <h1 style={{
+          fontFamily: "var(--font-display)", fontSize: "clamp(26px, 4vw, 42px)",
+          fontWeight: 800, letterSpacing: "-1px"
+        }}>
+          Generate Prompt SaaS-mu
+        </h1>
+        <p style={{ color: "var(--text2)", marginTop: 8 }}>
+          Isi parameter di bawah, lalu klik Generate untuk mendapatkan prompt master yang siap dipakai.
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+        {/* LEFT: FORM */}
+        <div style={{
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: 16, padding: 28
+        }}>
+          <h3 style={{
+            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18,
+            marginBottom: 24, display: "flex", alignItems: "center", gap: 8
+          }}>
+            <Icon name="layers" size={18} color="var(--accent)" />
+            Parameter Produk
+          </h3>
+
+          {fieldGroup("Nama Produk",
+            <input style={inputStyle} placeholder="contoh: HireFlow, LearnLaunch, LedgerAI"
+              value={params.productName} onChange={e => update("productName", e.target.value)} />
+          )}
+          {fieldGroup("Tagline",
+            <input style={inputStyle} placeholder="contoh: Rekrut lebih cepat, kelola tim lebih mudah"
+              value={params.tagline} onChange={e => update("tagline", e.target.value)} />
+          )}
+          {fieldGroup("Niche / Industri",
+            <input style={inputStyle} placeholder="contoh: HR Tech, EdTech, FinTech, MarTech"
+              value={params.niche} onChange={e => update("niche", e.target.value)} />
+          )}
+          {fieldGroup("Target User",
+            <input style={inputStyle} placeholder="contoh: HR Manager, startup founder, guru, dokter"
+              value={params.targetUser} onChange={e => update("targetUser", e.target.value)} />
+          )}
+          {fieldGroup("Core Value Proposition",
+            <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 72 }}
+              placeholder="Apa masalah utama yang diselesaikan produk ini?"
+              value={params.valueProp} onChange={e => update("valueProp", e.target.value)} />
+          )}
+
+          <div className="neon-line" style={{ margin: "24px 0" }} />
+          <h3 style={{
+            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18,
+            marginBottom: 20, display: "flex", alignItems: "center", gap: 8
+          }}>
+            <Icon name="stars" size={18} color="var(--accent)" />
+            Design & Tech
+          </h3>
+
+          {fieldGroup("Design Direction",
+            <select style={selectStyle} value={params.designDir} onChange={e => update("designDir", e.target.value)}>
+              <option value="modern-minimal">Modern Minimal</option>
+              <option value="bold-energetic">Bold & Energetic</option>
+              <option value="corporate">Corporate Professional</option>
+              <option value="dark-sleek">Dark & Sleek</option>
+              <option value="warm-friendly">Warm & Friendly</option>
+              <option value="luxury">Luxurious Premium</option>
+            </select>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              {fieldGroup("Theme Mode",
+                <select style={selectStyle} value={params.themeMode} onChange={e => update("themeMode", e.target.value)}>
+                  <option value="light">Light Only</option>
+                  <option value="dark">Dark Only</option>
+                  <option value="both">Light + Dark Toggle</option>
+                </select>
+              )}
+            </div>
+            <div>
+              {fieldGroup("Tech Level",
+                <select style={selectStyle} value={params.techLevel} onChange={e => update("techLevel", e.target.value)}>
+                  <option value="beginner">Beginner (Single JSX)</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced (Next.js)</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          {fieldGroup("Color Preference (opsional)",
+            <input style={inputStyle} placeholder="contoh: primary #6366F1, accent #EC4899"
+              value={params.colorPref} onChange={e => update("colorPref", e.target.value)} />
+          )}
+
+          <div className="neon-line" style={{ margin: "24px 0" }} />
+          <h3 style={{
+            fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18,
+            marginBottom: 20, display: "flex", alignItems: "center", gap: 8
+          }}>
+            <Icon name="code" size={18} color="var(--accent)" />
+            Halaman & Fitur Khusus
+          </h3>
+
+          {fieldGroup("Halaman/Fitur Khusus (satu per baris)",
+            <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 100, fontFamily: "var(--font-mono)", fontSize: 12 }}
+              placeholder={`Applicant Tracking System (ATS)\nEmployee Directory\nLeave Management`}
+              value={params.specialPages} onChange={e => update("specialPages", e.target.value)} />
+          )}
+          {fieldGroup("Special Requirements (opsional)",
+            <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+              placeholder="contoh: Tambahkan AI chat widget, dark mode toggle, Stripe payment flow..."
+              value={params.specialReqs} onChange={e => update("specialReqs", e.target.value)} />
+          )}
+
+          <button
+            className="btn-primary"
+            style={{ width: "100%", padding: "15px", fontSize: 16, marginTop: 8 }}
+            onClick={handleGenerate}
+            disabled={isGenerating}
+          >
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              {isGenerating
+                ? <><span className="spin-el" style={{ display: "inline-block" }}>⚡</span> Generating...</>
+                : <><Icon name="zap" size={18} color="#000" /> Generate Prompt</>
+              }
+            </span>
+          </button>
+        </div>
+
+        {/* RIGHT: OUTPUT */}
+        <div style={{ position: "sticky", top: 88 }}>
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 16, overflow: "hidden"
+          }}>
+            {/* Output header */}
+            <div style={{
+              padding: "16px 20px", borderBottom: "1px solid var(--border)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: "var(--bg2)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["#FF5F57","#FEBC2E","#28C840"].map((c,i) => (
+                    <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c }} />
+                  ))}
+                </div>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text3)" }}>
+                  prompt_output.txt
+                </span>
+                {isGenerating && (
+                  <span className="tag tag-amber" style={{ fontSize: 10 }}>GENERATING...</span>
+                )}
+                {generatedPrompt && !isGenerating && (
+                  <span className="tag tag-green" style={{ fontSize: 10 }}>✓ READY</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {generatedPrompt && (
+                  <>
+                    <button className="btn-secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={handleCopy}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {copied ? <Icon name="check" size={13} color="var(--green)" /> : <Icon name="copy" size={13} />}
+                        {copied ? "Copied!" : "Copy"}
+                      </span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Output body */}
+            <div style={{ padding: 20, minHeight: 500, maxHeight: "70vh", overflowY: "auto" }}>
+              {!generatedPrompt && !isGenerating ? (
+                <div style={{
+                  height: 460, display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: 16, opacity: 0.4
+                }}>
+                  <div className="float-el">
+                    <Icon name="code" size={48} color="var(--text3)" />
+                  </div>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text3)", textAlign: "center" }}>
+                    Isi parameter & klik Generate<br />untuk melihat prompt di sini
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <pre style={{
+                    fontFamily: "var(--font-mono)", fontSize: 12, lineHeight: 1.8,
+                    color: "#8BBFD3", whiteSpace: "pre-wrap", wordBreak: "break-word"
+                  }}>
+                    {generatedPrompt}
+                    {isGenerating && <span className="cursor-blink" style={{ color: "var(--accent)" }}>▋</span>}
+                  </pre>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {generatedPrompt && (
+              <div style={{
+                padding: "12px 20px", borderTop: "1px solid var(--border)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "var(--bg2)"
+              }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text3)" }}>
+                  {charCount.toLocaleString()} karakter
+                </span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["Claude", "GPT", "v0", "Bolt"].map(tool => (
+                    <span key={tool} className="tag tag-cyan" style={{ fontSize: 10, cursor: "pointer" }}>{tool}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tips */}
+          {generatedPrompt && !isGenerating && (
+            <div className="slide-in" style={{
+              marginTop: 16, padding: "14px 18px", borderRadius: 12,
+              background: "var(--green-dim)", border: "1px solid rgba(0,255,136,0.2)",
+              display: "flex", gap: 12, alignItems: "flex-start"
+            }}>
+              <Icon name="info" size={16} color="var(--green)" />
+              <div>
+                <p style={{ fontSize: 13, color: "var(--green)", fontWeight: 600, marginBottom: 4 }}>Prompt siap digunakan!</p>
+                <p style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
+                  Copy prompt di atas dan paste ke Claude atau AI tool favoritmu. 
+                  Gunakan <strong style={{ color: "var(--text)" }}>Claude Sonnet</strong> untuk hasil terbaik.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════
+// DASHBOARD PAGE COMPONENT
+// ═══════════════════════════════════
+const DashboardPage = () => {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const recentPrompts = [
+    { name: "HireFlow", niche: "HR Tech", design: "Dark & Sleek", time: "2 mnt lalu", chars: "3,241", status: "success" },
+    { name: "LearnLaunch", niche: "EdTech", design: "Warm & Friendly", time: "18 mnt lalu", chars: "3,108", status: "success" },
+    { name: "LedgerAI", niche: "FinTech", design: "Corporate", time: "1 jam lalu", chars: "3,389", status: "success" },
+    { name: "CampaignHub", niche: "MarTech", design: "Bold & Energetic", time: "3 jam lalu", chars: "3,056", status: "success" },
+    { name: "LegalDesk", niche: "LegalTech", design: "Luxury Premium", time: "5 jam lalu", chars: "3,412", status: "success" },
+    { name: "ClinicOS", niche: "HealthTech", design: "Modern Minimal", time: "Kemarin", chars: "3,287", status: "success" },
+  ];
+
+  const metrics = [
+    { label: "Total Prompts Generated", value: "1,284", change: "+23%", up: true, color: "var(--accent)" },
+    { label: "Niche Paling Populer", value: "FinTech", change: "32% share", up: true, color: "var(--green)" },
+    { label: "Avg. Prompt Length", value: "3.2K", change: "chars", up: true, color: "var(--amber)" },
+    { label: "Copy Rate", value: "94%", change: "+5%", up: true, color: "#C084FC" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <span className="tag tag-green" style={{ marginBottom: 12, display: "inline-flex" }}>DASHBOARD</span>
+        <h1 style={{
+          fontFamily: "var(--font-display)", fontSize: "clamp(26px, 4vw, 40px)",
+          fontWeight: 800, letterSpacing: "-1px"
+        }}>
+          Overview Aktivitas
+        </h1>
+        <p style={{ color: "var(--text2)", marginTop: 8 }}>
+          Pantau penggunaan PromptForge dan prompt yang sudah kamu buat.
+        </p>
+      </div>
+
+      {/* Metrics */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 32 }}>
+        {metrics.map((m, i) => (
+          <div key={i} style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 14, padding: "22px 24px"
+          }}>
+            <p style={{ fontSize: 12, color: "var(--text3)", fontFamily: "var(--font-mono)", marginBottom: 10 }}>
+              {m.label.toUpperCase()}
+            </p>
+            <p style={{
+              fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 800,
+              color: m.color, lineHeight: 1
+            }}>{m.value}</p>
+            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, color: m.up ? "var(--green)" : "var(--red)" }}>
+                {m.up ? "↑" : "↓"} {m.change}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent Prompts Table */}
+      <div style={{
+        background: "var(--surface)", border: "1px solid var(--border)",
+        borderRadius: 16, overflow: "hidden"
+      }}>
+        <div style={{
+          padding: "20px 24px", borderBottom: "1px solid var(--border)",
+          display: "flex", alignItems: "center", justifyContent: "space-between"
+        }}>
+          <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>
+            Prompt Terbaru
+          </h3>
+          <span className="tag tag-cyan">6 PROMPTS</span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                {["Nama Produk", "Niche", "Design Dir", "Panjang", "Waktu", "Status"].map(h => (
+                  <th key={h} style={{
+                    padding: "12px 20px", textAlign: "left", fontSize: 11,
+                    color: "var(--text3)", fontFamily: "var(--font-mono)",
+                    fontWeight: 500, textTransform: "uppercase", letterSpacing: "1px"
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {recentPrompts.map((p, i) => (
+                <tr key={i} style={{
+                  borderBottom: i < recentPrompts.length - 1 ? "1px solid var(--border)" : "none",
+                  transition: "background 0.15s"
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--surface2)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <td style={{ padding: "14px 20px" }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 600 }}>{p.name}</span>
+                  </td>
+                  <td style={{ padding: "14px 20px" }}>
+                    <span className="tag tag-cyan">{p.niche}</span>
+                  </td>
+                  <td style={{ padding: "14px 20px", color: "var(--text2)", fontSize: 13 }}>{p.design}</td>
+                  <td style={{ padding: "14px 20px", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text2)" }}>{p.chars}</td>
+                  <td style={{ padding: "14px 20px", color: "var(--text3)", fontSize: 13 }}>{p.time}</td>
+                  <td style={{ padding: "14px 20px" }}>
+                    <span className="tag tag-green">✓ DONE</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════
+// NAVBAR
+// ═══════════════════════════════════
+const Navbar = ({ currentPage, onNavigate }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = [
+    { id: "home", label: "Home" },
+    { id: "generator", label: "Generator" },
+    { id: "dashboard", label: "Dashboard" },
+  ];
+
+  return (
+    <>
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(8,11,17,0.85)", backdropFilter: "blur(16px)",
+        borderBottom: "1px solid var(--border)", height: 64,
+        display: "flex", alignItems: "center", padding: "0 24px",
+        justifyContent: "space-between"
+      }}>
+        {/* Logo */}
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+          onClick={() => onNavigate("home")}
+        >
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: "linear-gradient(135deg, #00D4FF, #0088BB)",
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }}>
+            <Icon name="bolt" size={16} color="#000" />
+          </div>
+          <span style={{
+            fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18,
+            letterSpacing: "-0.5px"
+          }}>
+            Prompt<span style={{ color: "var(--accent)" }}>Forge</span>
+          </span>
+        </div>
+
+        {/* Desktop Nav */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              style={{
+                background: currentPage === item.id ? "var(--surface2)" : "transparent",
+                border: currentPage === item.id ? "1px solid var(--border2)" : "1px solid transparent",
+                color: currentPage === item.id ? "var(--text)" : "var(--text2)",
+                padding: "7px 16px", borderRadius: 8,
+                fontSize: 14, fontFamily: "var(--font-body)", cursor: "pointer",
+                transition: "all 0.15s"
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <button
+          className="btn-primary"
+          style={{ padding: "8px 20px", fontSize: 14 }}
+          onClick={() => onNavigate("generator")}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <Icon name="zap" size={14} color="#000" />
+            Generate
+          </span>
+        </button>
+      </nav>
+
+      {/* Spacer */}
+      <div style={{ height: 64 }} />
+    </>
+  );
+};
+
+// ═══════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════
+export default function App() {
+  const [currentPage, setCurrentPage] = useState("home");
+  const [presetData, setPresetData] = useState(null);
+
+  const navigate = (page, preset = null) => {
+    setCurrentPage(page);
+    if (preset) setPresetData(preset);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return (
+    <>
+      <FontLoader />
+      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+        <Navbar currentPage={currentPage} onNavigate={navigate} />
+
+        <main>
+          {currentPage === "home" && <LandingPage onNavigate={navigate} />}
+          {currentPage === "generator" && <GeneratorPage presetData={presetData} />}
+          {currentPage === "dashboard" && <DashboardPage />}
+        </main>
+
+        {/* Footer */}
+        <footer style={{
+          borderTop: "1px solid var(--border)", padding: "32px 24px",
+          textAlign: "center", marginTop: 40
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 6,
+              background: "linear-gradient(135deg, #00D4FF, #0088BB)",
+              display: "flex", alignItems: "center", justifyContent: "center"
+            }}>
+              <Icon name="bolt" size={12} color="#000" />
+            </div>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>
+              Prompt<span style={{ color: "var(--accent)" }}>Forge</span>
+            </span>
+          </div>
+          <p style={{ fontSize: 12, color: "var(--text3)", fontFamily: "var(--font-mono)" }}>
+            © 2025 PromptForge — Generate smarter, build faster.
+          </p>
+        </footer>
+      </div>
+    </>
+  );
+}
